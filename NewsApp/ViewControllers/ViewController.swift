@@ -42,6 +42,7 @@ class NewsViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         setupViews()
+        setupSearchHistoryButton()
         fetchData()
     }
     
@@ -64,6 +65,21 @@ class NewsViewController: UIViewController {
                 print(error.localizedDescription)
             }
         }
+    }
+    
+    private func setupSearchHistoryButton() {
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: .init(systemName: "note.text"),
+            style: .plain,
+            target: self ,
+            action: #selector(didTapRecentSearches)
+        )
+    }
+    
+    @objc private func didTapRecentSearches() {
+        let vc = RecentSearchesViewController()
+        vc.delegate = self
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     private func setupViews() {
@@ -114,11 +130,14 @@ extension NewsViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
+    //MARK: - Searchbar delegate
+
 extension NewsViewController: UISearchBarDelegate {
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let query = searchBar.text else { return }
         
+        RecentSearchService.shared.saveSearch(query: query)
         fetchData(forQuery: query)
         searchBar.resignFirstResponder()
     }
@@ -126,5 +145,13 @@ extension NewsViewController: UISearchBarDelegate {
     func searchBarShouldReturn(_ searchBar: UISearchBar) -> Bool {
         searchBar.resignFirstResponder()
         return true
+    }
+}
+
+extension NewsViewController: RecentSearchVCDelegate {
+    func didSelectCell(withQuery query: String) {
+        searchBar.text = ""
+        fetchData(forQuery: query)
+        searchBar.resignFirstResponder()
     }
 }
